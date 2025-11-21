@@ -1,0 +1,373 @@
+// main.cpp
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include <WiFiClientSecureBearSSL.h>
+
+#ifndef STASSID
+#define STASSID "TLU"
+#define STAPSK ""
+#endif
+
+// --- Pin definitions (as requested) ---
+const uint8_t CAR_RED_PIN = 14;    // GPIO5
+const uint8_t CAR_YELLOW_PIN = 12; // GPIO6
+const uint8_t CAR_GREEN_PIN = 13;  // GPIO7
+
+const uint8_t PED_RED_PIN = 5;   // GPIO3
+const uint8_t PED_GREEN_PIN = 2; // GPIO4
+
+// --- URLs (from your JS) ---
+const String serverTimeURL =
+    "https://script.google.com/macros/s/"
+    "AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/"
+    "exec";
+const String confiURL =
+    "https://script.google.com/macros/s/"
+    "AKfycbzl8Oez2ld9P_2gI1KNMHofm14QhEg9YPC8qthcPkuDy4Le5XnoDHGztwRprpTwijJb/"
+    "exec";            // will be used with ?foorinr=1
+const int fooriNr = 1; // default like original script
+
+ESP8266WiFiMulti WiFiMulti;
+
+// --- State & timing ---
+long long nihe = 0; // offset = localMillis - serverMillis (ms)
+bool serverAegKorras = false;
+
+unsigned long lastConfigPoll = 0;
+const unsigned long CONFIG_POLL_INTERVAL = 20000UL; // 20s
+
+unsigned long lastUpdate = 0;
+const unsigned long UPDATE_INTERVAL = 300UL; // 300ms
+
+// Config defaults (ms)
+unsigned long kestus = 20000UL;
+unsigned long foorinihe = 0UL;
+bool globalNightModePreference = false;
+bool isNightModeActiveLocally = false;
+
+// Helper: perform HTTPS GET and return payload (empty on failure)
+String httpsGet(const String &url) {
+  if (WiFiMulti.run() != WL_CONNECTED) {
+    return String();
+  }
+
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(
+      new BearSSL::WiFiClientSecure);
+  client->setInsecure();
+  HTTPClient https;
+
+  String payload = "";
+
+  if (https.begin(*client, url)) {
+    https.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+    int httpCode = https.GET();
+    if (httpCode > 0) {
+      if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+        payload = https.getString();
+      }
+    }
+    https.end();
+  }
+  return payload;
+}
+
+// Fetch server time once and compute offset (nihe)
+void fetchServerTime() {
+  Serial.println("[fetchServerTime] fetching server time...");
+  String resp = httpsGet(serverTimeURL);
+  if (resp.length() == 0) {
+    Serial.println("[fetchServerTime] failed to fetch server time");
+    return;
+  }
+
+  // Expect server returns epoch milliseconds as string (same as JS)
+  long long serverMillis = 0;
+  // trim whitespace
+  resp.trim();
+  // try to parse to long long
+  serverMillis = atoll(resp.c_str());
+  // local millis (millis() returns unsigned long - wrap safe transformation)
+  unsigned long local = millis();
+  nihe = (long long)local - serverMillis;
+  serverAegKorras = true;
+  Serial.printf("[fetchServerTime] serverMillis=%lld local=%lu nihe=%lld\n",
+                serverMillis, local, nihe);
+}
+
+// Fetch config: expects JSON array like [durationSeconds, offsetSeconds,
+// nightModeBool]
+void fetchConfig() {
+  String url = String(confiURL) + "?foorinr=" + String(fooriNr);
+  String resp = httpsGet(url);
+  if (resp.length() == 0) {
+    Serial.println("[fetchConfig] failed to fetch config");
+    return;
+  }
+
+  // parse JSON - expecting array
+  StaticJsonDocument<256> doc;
+  DeserializationError err = deserializeJson(doc, resp);
+  if (err) {
+    Serial.print("[fetchConfig] JSON parse error: ");
+    Serial.println(err.c_str());
+    return;
+  }
+
+  // defensive parsing; if not array, skip
+  if (!doc.is<JsonArray>()) {
+    Serial.println("[fetchConfig] config not array");
+    return;
+  }
+
+  JsonArray arr = doc.as<JsonArray>();
+  if (arr.size() >= 1) {
+    long val0 = arr[0].as<long>();
+    if (val0 > 0)
+      kestus = (unsigned long)val0 * 1000UL;
+  }
+  if (arr.size() >= 2) {
+    long val1 = arr[1].as<long>();
+    foorinihe = (unsigned long)val1 * 1000UL;
+  }
+  if (arr.size() >= 3) {
+    globalNightModePreference = arr[2].as<bool>();
+  }
+
+  Serial.printf(
+      "[fetchConfig] kestus=%lu ms, foorinihe=%lu ms, globalNight=%s\n", kestus,
+      foorinihe, globalNightModePreference ? "true" : "false");
+}
+
+// Utility: get current "server" time in ms (approx)
+unsigned long getServerMillis() {
+  // server time = local millis - nihe (per JS logic)
+  long long v = (long long)millis() - nihe;
+  if (v < 0)
+    return 0;
+  return (unsigned long)v;
+}
+
+// LED helpers
+inline void setPin(uint8_t pin, bool on) { digitalWrite(pin, on ? HIGH : LOW); }
+
+void updateLights() {
+  if (!serverAegKorras)
+    return;
+
+  unsigned long serverNow = getServerMillis(); // ms
+  // compute aeg = new Date().getTime() - nihe in JS -> here serverNow already
+  // then tsukliAeg = (((aeg - kestus + foorinihe) % kestus) + kestus) % kestus;
+  // be careful with unsigned wrap:
+  long long temp =
+      (long long)serverNow - (long long)kestus + (long long)foorinihe;
+  // wrap into [0, kestus)
+  long long tsukliAeg_ll;
+  if (kestus == 0) {
+    tsukliAeg_ll = 0;
+  } else {
+    tsukliAeg_ll = temp % (long long)kestus;
+    if (tsukliAeg_ll < 0)
+      tsukliAeg_ll += kestus;
+  }
+  unsigned long tsukliAeg = (unsigned long)tsukliAeg_ll; // ms
+
+  // Determine currentCarRedOn (used for night mode activation)
+  float t = (float)tsukliAeg / 1000.0f;
+  const float redYellow = 1.0f;
+  const float greenBlink = 2.0f;
+  const float yellow = 1.0f;
+  float totalSeconds = (float)kestus / 1000.0f;
+  float remaining = totalSeconds - (redYellow + greenBlink + yellow);
+  float green = remaining * 0.3f;
+  // float red = remaining * 0.7f;
+
+  float t1 = redYellow;
+  float t2 = t1 + green;
+  float t3 = t2 + greenBlink;
+  float t4 = t3 + yellow;
+  // float t5 = t4 + red;
+
+  bool currentCarRedOn = false;
+  if (t < t1 || t >= t4) {
+    currentCarRedOn = true;
+  }
+
+  // Night mode rules (preserve logic)
+  // static bool prevNightPref = false;
+  if (globalNightModePreference) {
+    if (currentCarRedOn) {
+      isNightModeActiveLocally = true;
+    }
+  } else {
+    if (isNightModeActiveLocally) {
+      // force tsukliAeg into t4 region (end of car green/yellow sequence)
+      tsukliAeg = (unsigned long)(t4 * 1000.0f);
+      t = (float)tsukliAeg / 1000.0f;
+    }
+    isNightModeActiveLocally = false;
+  }
+
+  // Car light logic (mirror joonistaAutoFoor)
+  bool redOn = false, yellowOn = false, greenOn = false;
+
+  if (isNightModeActiveLocally) {
+    // blink yellow every 500ms (JS: Math.floor(Date.now()/500) % 2 === 0)
+    unsigned long now = millis();
+    yellowOn = ((now / 500UL) % 2UL) == 0;
+  } else {
+    float tt = (float)tsukliAeg / 1000.0f;
+    if (tt < t1) {
+      redOn = true;
+      yellowOn = true;
+    } else if (tt < t2) {
+      greenOn = true;
+    } else if (tt < t3) {
+      // green blink: frequency 1Hz (JS used Math.floor((t-t2)*2)%2===0)
+      float phase = (tt - t2) * 2.0f;
+      greenOn = (((int)floor(phase)) % 2) == 0;
+    } else if (tt < t4) {
+      yellowOn = true;
+    } else {
+      redOn = true;
+    }
+  }
+
+  // Pedestrian logic (mirror joonistaJalakaijaFoor)
+  bool pedRedOn = false;
+  bool pedGreenOn = false;
+
+  if (isNightModeActiveLocally) {
+    // both off (JS used "#000000" for both lights)
+    pedRedOn = false;
+    pedGreenOn = false;
+  } else {
+    // derive using auto state values from above
+    // const { t, t1, t4, kestus } = autoState;
+    float total = (float)kestus / 1000.0f;
+    float jalaStart = fmod((t4 + 1.0f), total); // (t4 + 1) % total
+    float jalaEnd =
+        fmod((t1 - 3.0f + total), total); // (t1 - 3 + total) % total
+    const float blinkDuration = 3.0f;
+    const float blinkFreq = 2.0f; // blink frequency multiplier
+
+    float jt = fmod((float)tsukliAeg / 1000.0f, total);
+
+    bool jalaActive = false;
+    if (jalaStart < jalaEnd) {
+      jalaActive = (jt >= jalaStart) && (jt < jalaEnd);
+    } else {
+      jalaActive = (jt >= jalaStart) || (jt < jalaEnd);
+    }
+
+    if (jalaActive) {
+      float distToEnd = fmod((jalaEnd - jt + total), total);
+      if (distToEnd <= blinkDuration) {
+        // blinking based on distance * freq
+        float v = distToEnd * blinkFreq;
+        pedGreenOn = (((int)floor(v) % 2) == 0);
+      } else {
+        pedGreenOn = true;
+      }
+      pedRedOn = false;
+    } else {
+      pedRedOn = true;
+      pedGreenOn = false;
+    }
+  }
+
+  // Apply LEDs (active HIGH assumed)
+  setPin(CAR_RED_PIN, redOn);
+  setPin(CAR_YELLOW_PIN, yellowOn);
+  setPin(CAR_GREEN_PIN, greenOn);
+
+  setPin(PED_RED_PIN, pedRedOn);
+  setPin(PED_GREEN_PIN, pedGreenOn);
+
+  // Debug print occasionally
+  static unsigned long lastDbg = 0;
+  if (millis() - lastDbg > 2000UL) {
+    lastDbg = millis();
+    Serial.printf("[update] tsukliAeg=%lu ms red=%d yellow=%d green=%d "
+                  "pedRed=%d pedGreen=%d night=%d\n",
+                  tsukliAeg, redOn, yellowOn, greenOn, pedRedOn, pedGreenOn,
+                  isNightModeActiveLocally ? 1 : 0);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+
+  // configure pins
+  pinMode(CAR_RED_PIN, OUTPUT);
+  pinMode(CAR_YELLOW_PIN, OUTPUT);
+  pinMode(CAR_GREEN_PIN, OUTPUT);
+  pinMode(PED_RED_PIN, OUTPUT);
+  pinMode(PED_GREEN_PIN, OUTPUT);
+
+  // initial OFF
+  digitalWrite(CAR_RED_PIN, LOW);
+  digitalWrite(CAR_YELLOW_PIN, LOW);
+  digitalWrite(CAR_GREEN_PIN, LOW);
+  digitalWrite(PED_RED_PIN, LOW);
+  digitalWrite(PED_GREEN_PIN, LOW);
+
+  Serial.println("=== ESP8266 Traffic Light ===");
+
+  // WiFi setup (reuse WiFiMulti)
+  WiFi.mode(WIFI_STA);
+  WiFiMulti.addAP(STASSID, STAPSK);
+
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(STASSID);
+
+  int retries = 30;
+  while (WiFiMulti.run() != WL_CONNECTED && retries-- > 0) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi connected!");
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("Failed to connect to WiFi.");
+  }
+
+  // Fetch server time once (like JS algus)
+  fetchServerTime();
+
+  // initial config fetch
+  fetchConfig();
+
+  // small LED blink as alive
+  digitalWrite(CAR_GREEN_PIN, HIGH);
+  digitalWrite(PED_GREEN_PIN, HIGH);
+  delay(1000);
+  digitalWrite(CAR_GREEN_PIN, LOW);
+  digitalWrite(PED_GREEN_PIN, LOW);
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  // Poll config periodically (every 20s)
+  if (now - lastConfigPoll > CONFIG_POLL_INTERVAL) {
+    lastConfigPoll = now;
+    fetchConfig();
+  }
+
+  // update lights every 300ms (like JS setInterval(uuenda, 300))
+  if (now - lastUpdate > UPDATE_INTERVAL) {
+    lastUpdate = now;
+    updateLights();
+  }
+
+  // keep WiFi responsive
+  delay(2);
+}
