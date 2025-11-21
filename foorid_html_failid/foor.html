@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="et">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Eesti Liiklusfoor + Jalakäija foor</title>
+    <style>
+      /* === Base styling === */
+      body {
+        background: radial-gradient(circle at center, #0f0f0f 0%, #080808 100%);
+        color: #f0f0f0;
+        text-align: center;
+        font-family: "Poppins", "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+      }
+
+      h2 {
+        margin-top: 25px;
+        font-size: 1.8rem;
+        color: #ffcc00;
+        text-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+      }
+
+      h3 {
+        color: #ffcc00;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-shadow: 0 0 6px rgba(255, 204, 0, 0.5);
+      }
+
+      #lightNrContainer {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.08);
+        padding: 8px 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 15px rgba(255, 204, 0, 0.1);
+      }
+
+      /* === Foor container layout === */
+      .foorid {
+        display: flex;
+        justify-content: center;
+        gap: 80px;
+        flex-wrap: wrap;
+        margin-top: 80px;
+        padding: 20px;
+      }
+
+      /* === Canvas styling === */
+      canvas {
+        background: #181818;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.8),
+          0 0 20px rgba(255, 204, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      canvas:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 0 40px rgba(255, 204, 0, 0.25),
+          0 0 10px rgba(255, 255, 255, 0.1);
+      }
+
+      footer {
+        margin-top: 40px;
+        font-size: 0.9rem;
+        color: #777;
+        opacity: 0.8;
+        padding-bottom: 20px;
+      }
+    </style>
+
+    <script>
+      let nihe = 0;
+      let serverAegKorras = false;
+      const fooriNr =
+        new URLSearchParams(window.location.search).get("id") || 1;
+      const confiURL =
+        "https://script.google.com/macros/s/AKfycbzl8Oez2ld9P_2gI1KNMHofm14QhEg9YPC8qthcPkuDy4Le5XnoDHGztwRprpTwijJb/exec";
+
+      function algus() {
+        fetch(
+          "https://script.google.com/macros/s/AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/exec"
+        )
+          .then((d) => d.text())
+          .then((d) => {
+            nihe = new Date().getTime() - parseInt(d);
+            serverAegKorras = true;
+            looFoorid();
+          });
+      }
+
+      function looFoorid() {
+        const autoCanvas = document.getElementById("autoFoor");
+        const jalaCanvas = document.getElementById("jalaFoor");
+        const autoCtx = autoCanvas.getContext("2d");
+        const jalaCtx = jalaCanvas.getContext("2d");
+
+        autoCanvas.width = 120;
+        autoCanvas.height = 300;
+        jalaCanvas.width = 120;
+        jalaCanvas.height = 200;
+
+        let kestus = 20000;
+        let foorinihe = 0;
+        let globalNightModePreference = false;
+        let isNightModeActiveLocally = false;
+
+        function kysiKonf() {
+          fetch(`${confiURL}?foorinr=` + fooriNr)
+            .then((d) => d.json())
+            .then((conf) => {
+              kestus = conf[0] * 1000;
+              foorinihe = conf[1] * 1000;
+              globalNightModePreference = conf[2];
+            });
+        }
+
+        function drawLight(ctx, x, y, color) {
+          ctx.beginPath();
+          ctx.arc(x, y, 35, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 20;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        function joonistaAutoFoor(aeg, isNightModeActiveLocally) {
+          autoCtx.fillStyle = "#222";
+          autoCtx.fillRect(0, 0, 120, 300);
+          autoCtx.strokeStyle = "#555";
+          autoCtx.lineWidth = 4;
+          autoCtx.strokeRect(0, 0, 120, 300);
+
+          let redOn = false,
+            yellowOn = false,
+            greenOn = false;
+
+          let t = 0,
+            t1 = 0,
+            t2 = 0,
+            t3 = 0,
+            t4 = 0,
+            t5 = 0;
+
+          if (isNightModeActiveLocally) {
+            yellowOn = Math.floor(Date.now() / 500) % 2 === 0;
+          } else {
+            t = aeg % kestus;
+            const redYellow = 1;
+            const greenBlink = 2;
+            const yellow = 1;
+            const remaining = kestus / 1000 - (redYellow + greenBlink + yellow);
+            const green = remaining * 0.3;
+            const red = remaining * 0.7;
+            t1 = redYellow;
+            t2 = t1 + green;
+            t3 = t2 + greenBlink;
+            t4 = t3 + yellow;
+            t5 = t4 + red;
+
+            if (t < t1) {
+              redOn = true;
+              yellowOn = true;
+            } else if (t < t2) {
+              greenOn = true;
+            } else if (t < t3) {
+              greenOn = Math.floor((t - t2) * 2) % 2 === 0;
+            } else if (t < t4) {
+              yellowOn = true;
+            } else {
+              redOn = true;
+            }
+          }
+
+          drawLight(autoCtx, 60, 60, redOn ? "red" : "#440000");
+          drawLight(autoCtx, 60, 150, yellowOn ? "yellow" : "#444400");
+          drawLight(autoCtx, 60, 240, greenOn ? "lime" : "#003300");
+
+          return { t, t1, t4, kestus };
+        }
+
+        function joonistaJalakaijaFoor(autoState, isNightModeActiveLocally) {
+          jalaCtx.fillStyle = "#222";
+          jalaCtx.fillRect(0, 0, 120, 300);
+          jalaCtx.strokeStyle = "#555";
+          jalaCtx.lineWidth = 4;
+          jalaCtx.strokeRect(0, 0, 120, 300);
+
+          if (isNightModeActiveLocally) {
+            drawLight(jalaCtx, 60, 60, "#000000");
+            drawLight(jalaCtx, 60, 150, "#000000");
+            return;
+          }
+
+          let redOn = false;
+          let greenOn = false;
+
+          const { t, t1, t4, kestus } = autoState;
+          const total = kestus / 1000;
+          const jalaStart = (t4 + 1) % total;
+          const jalaEnd = (t1 - 3 + total) % total;
+          const blinkDuration = 3;
+          const blinkFreq = 2;
+          const jt = t % total;
+
+          let jalaActive = false;
+
+          if (jalaStart < jalaEnd) {
+            jalaActive = jt >= jalaStart && jt < jalaEnd;
+          } else {
+            jalaActive = jt >= jalaStart || jt < jalaEnd;
+          }
+
+          if (jalaActive) {
+            let distToEnd = (jalaEnd - jt + total) % total;
+            if (distToEnd <= blinkDuration) {
+              greenOn = Math.floor(distToEnd * blinkFreq) % 2 === 0;
+            } else {
+              greenOn = true;
+            }
+          } else {
+            redOn = true;
+          }
+
+          drawLight(jalaCtx, 60, 60, redOn ? "red" : "#440000");
+          drawLight(jalaCtx, 60, 150, greenOn ? "lime" : "#003300");
+        }
+
+        function uuenda() {
+          if (!serverAegKorras) return;
+          const aeg = new Date(new Date().getTime() - nihe);
+          let tsukliAeg =
+            (((aeg - kestus + foorinihe) % kestus) + kestus) % kestus;
+
+          let currentCarRedOn = false;
+          const t = tsukliAeg / 1000;
+          const redYellow = 1;
+          const greenBlink = 2;
+          const yellow = 1;
+          const remaining = kestus / 1000 - (redYellow + greenBlink + yellow);
+          const green = remaining * 0.3;
+          const red = remaining * 0.7;
+          const t1 = redYellow;
+          const t2 = t1 + green;
+          const t3 = t2 + greenBlink;
+          const t4 = t3 + yellow;
+
+          if (t < t1 || t >= t4) {
+            currentCarRedOn = true;
+          }
+
+          if (globalNightModePreference) {
+            if (currentCarRedOn) {
+              isNightModeActiveLocally = true;
+            }
+          } else {
+            if (isNightModeActiveLocally) {
+              tsukliAeg = t4 * 1000;
+            }
+            isNightModeActiveLocally = false;
+          }
+
+          const autoState = joonistaAutoFoor(
+            tsukliAeg / 1000,
+            isNightModeActiveLocally
+          );
+          joonistaJalakaijaFoor(autoState, isNightModeActiveLocally);
+        }
+
+        kysiKonf();
+        setInterval(kysiKonf, 10000);
+        setInterval(uuenda, 300);
+      }
+    </script>
+  </head>
+  <body onload="algus()">
+    <div id="lightNrContainer">
+      <h2>Foor: <span id="lightNr"></span></h2>
+    </div>
+    <div class="foorid">
+      <div>
+        <h3>Auto</h3>
+        <canvas id="autoFoor"></canvas>
+      </div>
+      <div>
+        <h3>Jalakäija</h3>
+        <canvas id="jalaFoor"></canvas>
+      </div>
+    </div>
+    <!-- <footer>© 2025 Foorisüsteem. Kõik õigused kaitstud.</footer> -->
+    <script>
+      document.getElementById("lightNr").textContent = fooriNr;
+    </script>
+  </body>
+</html>

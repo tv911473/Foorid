@@ -1,0 +1,46 @@
+function doGet(e) {
+  const sheet = SpreadsheetApp.openById("1RnPHdSHGyx8oMWv35JIfAJpIkmz9DAvwCYB6FQMo5Xc").getSheets()[0];
+  const table = sheet.getRange(1,1,10,10).getValues();
+
+  // Kiiruse uuendamine
+  if (e.parameter.speed) {
+    const newSpeed = parseFloat(e.parameter.speed);
+    if (!isNaN(newSpeed)) {
+      sheet.getRange(6,2).setValue(newSpeed); // B6 = auto kiirus km/h
+      return ContentService.createTextOutput("Kiirus uuendatud").setMimeType(ContentService.MimeType.TEXT);
+    } else {
+      return ContentService.createTextOutput("Vigane kiirus").setMimeType(ContentService.MimeType.TEXT);
+    }
+  }
+
+  // Öörežiimi uuendamine
+  if (e.parameter.ooreziim) {
+    const ooreziim = e.parameter.ooreziim === 'true';
+    sheet.getRange(7, 2).setValue(ooreziim);
+    return ContentService.createTextOutput("Öörežiim uuendatud").setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  // Foori number (1, 2, 3)
+  const foorNr = parseInt(e.parameter.foorinr);
+  if (!foorNr || foorNr < 1) return;
+
+  // Kiirus ja kaugus
+  const kiirusKMH = table[5][1]; // lahter B6
+  const kiirusMS = kiirusKMH / 3.6;
+  const kaugus = table[2][foorNr]; // rida 3, veerud foor1,2,3
+  const kestus = table[3][foorNr]; // rida 4, veerud foor1,2,3
+  const ooreziim = table[6][1]; // lahter B7
+
+  // ROHELISE LAINE LOOGIKA
+  const proportsioon = 0.75; // foor läheb roheliseks enne auto jõudmist
+  let niheSek = kiirusMS !== 0 ? (kaugus / kiirusMS) * proportsioon : 0;
+  niheSek = niheSek % kestus;
+  if (niheSek < 0) niheSek += kestus;
+
+  // **ODAVAIM PARANDUS → pöörame laine suuna**
+  niheSek = (kestus - niheSek) % kestus;
+
+  return ContentService.createTextOutput(
+    JSON.stringify([kestus, niheSek, ooreziim])
+  ).setMimeType(ContentService.MimeType.JSON);
+}

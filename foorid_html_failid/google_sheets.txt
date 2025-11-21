@@ -1,0 +1,9 @@
+Google sheets configuration table
+
+foor			1	2	3
+nihe			
+kaugus meetrites	0	50	100
+kestus			20	20	20
+			
+auto kiirus km/h	0
+ooreziim		FALSE

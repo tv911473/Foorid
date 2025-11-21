@@ -1,0 +1,7 @@
+function myFunction() {
+   console.log(new Date().getTime())
+}
+
+function doGet(){
+  return ContentService.createTextOutput(JSON.stringify(new Date().getTime())).setMimeType(ContentService.MimeType.JSON);
+}
