@@ -1,0 +1,17 @@
+Füüsilise osaga liikluslahendus
+
+Aluseks liikluslahendus arvutis 
+https://docs.google.com/document/d/1Xd1VQRJZokxwdz_9hRlj9d5kfhUN0hoiDGpQH_YtEBY
+
+Iga rühmaliikme (1-4) kohta (vähemalt) üks füüsiline foor ning üks arvutifoor. 
+Juhtlehel saab kõiki foore vajadusel ükshaaval juhtida
+Vähemasti üks füüsiline foor kaubandusliku välimusega ning põrutuskindel (kannatab meetri kukkuda). 
+Iga rühmaliikme kohta füüsilisele foorile lisaks eriomadus (lisasektsiooni tuli, tõkkepuu, …)
+Administraatorilehe kasutamise ja andurite põhjustatud tegevuste logi. Logide analüüs arvulisel, tekstilisel ja graafilisel moel. 
+
+Administraatorilehel võimalik määrata eri kellaaegadeks ja/või nädalapäevadeks erisugused režiimid
+
+Tarkvara struktuuri kirjeldus, installimisjuhis, tarkvara ise allalaetaval kujul, andmevahetuse kirjeldus, elektriskeemid. Selgitus, et millise (vajadusel väljamõeldud) liikluskorralduse juures selline fooride toimimine kasulik on.
+
+Video toimiva lahenduse kohta
+Esitlused 12. detsembri nädalal
