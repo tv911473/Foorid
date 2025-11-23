@@ -7,8 +7,8 @@
 #include <WiFiClientSecureBearSSL.h>
 
 #ifndef STASSID
-#define STASSID "TLU"
-#define STAPSK ""
+#define STASSID "Xiaomi 14T"
+#define STAPSK "12345678"
 #endif
 
 // --- Pin definitions ---
@@ -19,11 +19,6 @@ const uint8_t PED_RED_PIN = 5;
 const uint8_t PED_GREEN_PIN = 2;
 const uint8_t NIGHT_MODE_BUTTON_PIN = 14;
 
-// --- Night mode button state ---
-bool nightModeButtonState = false;
-bool nightModePending = false; // true if waiting to send
-unsigned long lastButtonPress = 0;
-const unsigned long DEBOUNCE_DELAY = 50; // ms
 
 // --- Wi-Fi & URLs ---
 ESP8266WiFiMulti WiFiMulti;
@@ -303,6 +298,21 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
+   static bool lastButtonState = HIGH;
+  bool currentState = digitalRead(NIGHT_MODE_BUTTON_PIN);
+
+  if (currentState == LOW && lastButtonState == HIGH) {
+      globalNightModePreference = !globalNightModePreference;
+
+      Serial.println("Vajutati nupp! NightMode toggled -> " +
+                     String(globalNightModePreference));
+
+      sendNightModeToServer(globalNightModePreference);
+
+      delay(300);
+  }
+  lastButtonState = currentState;
+
   // Config polling
   if (now - lastConfigPoll > CONFIG_POLL_INTERVAL) {
     lastConfigPoll = now;
@@ -314,34 +324,7 @@ void loop() {
     lastUpdate = now;
     updateLights();
   }
-
-  // Button handling
-  static bool lastButtonState = HIGH; // ← HIGH when not pressed (pull-up)
-  int buttonRead = digitalRead(NIGHT_MODE_BUTTON_PIN);
-
-  if (buttonRead != lastButtonState) {
-    lastButtonPress = millis(); // ← reset timer on any change
-  }
-
-  if ((millis() - lastButtonPress) > DEBOUNCE_DELAY) {
-    if (buttonRead == LOW &&
-        lastButtonState == HIGH) { // ← FALLING edge = press
-      nightModeButtonState = !nightModeButtonState;
-      isNightModeActiveLocally = nightModeButtonState;
-      nightModePending = true;
-      Serial.println();
-      Serial.println("BUTTON PRESSED! Night mode: " +
-                     String(nightModeButtonState ? "ON" : "OFF"));
-      Serial.println();
-    }
-  }
-  lastButtonState = buttonRead;
-
-  // Send pending night mode
-  if (nightModePending && WiFiMulti.run() == WL_CONNECTED) {
-    sendNightModeToServer(nightModeButtonState);
-    nightModePending = false;
-  }
+ 
 
   delay(2);
 }
