@@ -1,198 +1,273 @@
 <!DOCTYPE html>
 <html lang="et">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Foorisüsteem</title>
-    <style>
-      /* Põhi */
-      body {
-        background: radial-gradient(circle at center, #0f0f0f 0%, #080808 100%);
-        color: #f0f0f0;
-        text-align: center;
-        font-family: "Poppins", "Segoe UI", Roboto, sans-serif;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
+<head>
+  <meta charset="UTF-8" />
+  <title>Foorisüsteem – Koondleht</title>
+  <style>
+    /* Põhi */
+    body {
+      background: radial-gradient(circle at center, #0f0f0f 0%, #080808 100%);
+      color: #f0f0f0;
+      text-align: center;
+      font-family: "Poppins", "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-top: 40px;
+      font-size: 2.6rem;
+      letter-spacing: 1.5px;
+      color: #ffcc00;
+      text-shadow: 0 0 15px rgba(255, 204, 0, 0.6),
+        0 0 25px rgba(255, 204, 0, 0.3);
+    }
+    /* Controls */
+    .controls {
+      margin: 25px auto;
+      padding: 15px 25px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      transition: background 0.3s ease;
+      max-width: 500px;
+    }
+    .controls:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    label {
+      font-weight: 500;
+      font-size: 1rem;
+      color: #e0e0e0;
+    }
+    input[type="range"] {
+      accent-color: #ffcc00;
+      width: 220px;
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.4);
+      accent-color: #ffcc00;
+      cursor: pointer;
+    }
+    #speedValue {
+      font-weight: bold;
+      color: #ffcc00;
+      font-size: 1.1rem;
+      min-width: 50px;
+    }
+    /* Foorituled */
+    #foorGrid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 50px;
+      margin: 50px auto;
+      padding: 0 20px;
+      max-width: 1300px;
+    }
+    iframe {
+      width: 400px;
+      height: 520px;
+      border: none;
+      border-radius: 16px;
+      background: #181818;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(255, 204, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    iframe:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 0 40px rgba(255, 204, 0, 0.25),
+        0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    #foorGrid p {
+      margin-top: 10px;
+      color: #b0b0b0;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #777;
+      opacity: 0.8;
+      padding-bottom: 20px;
+    }
+    #log {
+      margin: 30px auto;
+      padding: 15px;
+      max-width: 900px;
+      height: 200px;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      text-align: left;
+      color: #ffcc00;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+    #log b {
+      color: #ffcc00;
+      font-size: 1rem;
+    }
+    .local-event {
+      color: #a0d8ff;
+      font-style: italic;
+    }
+  </style>
+
+  <script>
+    const FOORIDE_ARV = 3;
+    const confiURL =
+      "https://script.google.com/macros/s/AKfycbyg7SLtDjc9ftl2AlQHnIurEFrtcf64K_DsYfnORX_9j4wVifyQ3iIcLcn2AvegCT20/exec";
+
+    // Lihtne kohaliku sündmuse lisamine
+    function addLocalLog(text) {
+      const log = document.getElementById("log");
+      const time = new Date().toLocaleTimeString();
+      log.innerHTML += `<span class="local-event">[${time}] ${text}</span><br>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function looKoondVaade() {
+      const grid = document.getElementById("foorGrid");
+      grid.innerHTML = "";
+      for (let i = 1; i <= FOORIDE_ARV; i++) {
+        const container = document.createElement("div");
+        container.style.textAlign = "center";
+
+        const frame = document.createElement("iframe");
+        frame.src = "foor.html?id=" + i;
+        frame.title = "Foor " + i;
+        container.appendChild(frame);
+
+        const caption = document.createElement("p");
+        caption.textContent = `Foor ${i}`;
+        container.appendChild(caption);
+
+        grid.appendChild(container);
       }
 
-      h1 {
-        margin-top: 40px;
-        font-size: 2.6rem;
-        letter-spacing: 1.5px;
-        color: #ffcc00;
-        text-shadow: 0 0 15px rgba(255, 204, 0, 0.6),
-          0 0 25px rgba(255, 204, 0, 0.3);
-      }
+      // Laadi logi kohe ja uuenda perioodiliselt
+      updateLogFromSheet();
+      setInterval(updateLogFromSheet, 8000);
+    }
 
-      /* Controls */
-      .controls {
-        margin: 25px auto;
-        padding: 15px 25px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(6px);
-        transition: background 0.3s ease;
-      }
+    function updateSpeed() {
+      const speed = document.getElementById("speedSlider").value;
+      document.getElementById("speedValue").innerText = speed;
 
-      .controls:hover {
-        background: rgba(255, 255, 255, 0.12);
-      }
+      fetch(`${confiURL}?speed=${speed}`)
+        .then(() => addLocalLog(`Kiirus muudetud: ${speed} km/h`))
+        .catch(() => addLocalLog("Kiiruse saatmine ebaõnnestus"));
+    }
 
-      label {
-        font-weight: 500;
-        font-size: 1rem;
-        color: #e0e0e0;
-      }
+    function resetSpeedOnLoad() {
+      fetch(`${confiURL}?speed=0`)
+        .then(() => console.log("Kiirus lähtestatud 0 peale"))
+        .catch(() => console.log("Lähtestamine ebaõnnestus"));
+    }
 
-      input[type="range"] {
-        accent-color: #ffcc00;
-        width: 220px;
-        cursor: pointer;
-      }
+    function toggleNightMode() {
+      const nightMode = document.getElementById("nightModeToggle").checked;
+      fetch(`${confiURL}?ooreziim=${nightMode}`)
+        .then(() => {
+          addLocalLog(`Öörežiim lülitatud: ${nightMode ? "SEES" : "VÄLJAS"} (veebist)`);
+          updateBodyBackground(nightMode);
+        })
+        .catch(() => addLocalLog("Öörežiimi saatmine ebaõnnestus"));
+    }
 
-      input[type="checkbox"] {
-        transform: scale(1.4);
-        accent-color: #ffcc00;
-        cursor: pointer;
-      }
+    function updateBodyBackground(isNight) {
+      document.body.style.background = isNight
+        ? "radial-gradient(circle at center, #000000 0%, #111111 100%)"
+        : "radial-gradient(circle at center, #0f0f0f 0%, #080808 100%)";
+    }
 
-      #speedValue {
-        font-weight: bold;
-        color: #ffcc00;
-        font-size: 1.1rem;
-      }
+    // Laadi Google Sheetsi logi (A9-st alla)
+    async function updateLogFromSheet() {
+      try {
+        const response = await fetch(confiURL + "?log=1");
+        const text = await response.text();
+        const lines = text.trim().split('\n').filter(line => line.trim() !== "");
 
-      /* Foorituled */
-      #foorGrid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 50px;
-        margin: 50px auto;
-        padding: 0 20px;
-        max-width: 1300px;
-      }
+        const log = document.getElementById("log");
 
-      iframe {
-        width: 400px;
-        height: 520px;
-        border: none;
-        border-radius: 16px;
-        background: #181818;
-        box-shadow: 0 0 25px rgba(0, 0, 0, 0.8),
-          0 0 20px rgba(255, 204, 0, 0.08);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
+        // Salvesta kohalikud sündmused
+        const localEvents = Array.from(log.querySelectorAll('.local-event'))
+          .map(el => el.outerHTML);
 
-      iframe:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 0 40px rgba(255, 204, 0, 0.25),
-          0 0 10px rgba(255, 255, 255, 0.1);
-      }
+        // Puhasta ja lisa Sheetsi logi
+        log.innerHTML = "<b>Logi:</b><br>";
 
-      #foorGrid p {
-        margin-top: 10px;
-        color: #b0b0b0;
-        font-size: 0.95rem;
-        font-weight: 400;
-      }
+        // Viimased 20 rida (tagurpidi)
+        lines.reverse().slice(0, 20).forEach(line => {
+          log.innerHTML += line + "<br>";
+        });
 
-      footer {
-        margin-top: 40px;
-        font-size: 0.9rem;
-        color: #777;
-        opacity: 0.8;
-        padding-bottom: 20px;
-      }
-    </style>
-
-    <script>
-      const FOORIDE_ARV = 3;
-      const confiURL =
-        "https://script.google.com/macros/s/AKfycbzl8Oez2ld9P_2gI1KNMHofm14QhEg9YPC8qthcPkuDy4Le5XnoDHGztwRprpTwijJb/exec";
-
-      function looKoondVaade() {
-        const grid = document.getElementById("foorGrid");
-        grid.innerHTML = "";
-        for (let i = 1; i <= FOORIDE_ARV; i++) {
-          const container = document.createElement("div");
-          container.style.textAlign = "center";
-
-          const frame = document.createElement("iframe");
-          frame.src = "foor.html?id=" + i;
-          frame.title = "Foor " + i;
-          container.appendChild(frame);
-
-          const caption = document.createElement("p");
-          caption.textContent = `Foor ${i}`;
-          container.appendChild(caption);
-
-          grid.appendChild(container);
+        // Lisa eraldaja ja kohalikud sündmused
+        if (localEvents.length > 0) {
+          log.innerHTML += "<br><small style='color:#666'>— Kohalikud sündmused —</small><br>";
+          localEvents.forEach(event => {
+            log.innerHTML += event + "<br>";
+          });
         }
+
+        log.scrollTop = log.scrollHeight;
+      } catch (err) {
+        console.error("Logi laadimine ebaõnnestus:", err);
+        addLocalLog("Logi laadimine ebaõnnestus");
       }
+    }
 
-      function updateSpeed() {
-        const speed = document.getElementById("speedSlider").value;
-        document.getElementById("speedValue").innerText = speed;
+    // Alglaadimine
+    window.onload = function () {
+      looKoondVaade();
+      resetSpeedOnLoad();
+    };
+  </script>
+</head>
 
-        fetch(`${confiURL}?speed=${speed}`).then(() => {
-          console.log("Speed updated in Google Sheet.");
-        });
-      }
+<body>
+  <h1>Foorisüsteem – Koondleht</h1>
 
-      function resetSpeedOnLoad() {
-        fetch(`${confiURL}?speed=0`).then(() => {
-          console.log("Speed reset to 0 in Google Sheet on page load.");
-        });
-      }
+  <div class="controls">
+    <label for="speedSlider">Kiirus (km/h):</label>
+    <input
+      type="range"
+      id="speedSlider"
+      min="-50"
+      max="50"
+      value="0"
+      onchange="updateSpeed()"
+    />
+    <span id="speedValue">0</span>
+  </div>
 
-      function toggleNightMode() {
-        const nightMode = document.getElementById("nightModeToggle").checked;
-        fetch(`${confiURL}?ooreziim=${nightMode}`).then(() => {
-          console.log("Night mode updated in Google Sheet.");
-        });
+  <div class="controls">
+    <label for="nightModeToggle">Öörežiim:</label>
+    <input
+      type="checkbox"
+      id="nightModeToggle"
+      onchange="toggleNightMode()"
+    />
+  </div>
 
-        // UI feedback for night mode
-        document.body.style.background = nightMode
-          ? "radial-gradient(circle at center, #000000 0%, #111111 100%)"
-          : "radial-gradient(circle at center, #0f0f0f 0%, #080808 100%)";
-      }
-    </script>
-  </head>
+  <div id="foorGrid"></div>
 
-  <body onload="looKoondVaade(); resetSpeedOnLoad();">
-    <h1>Foorisüsteem – Koondleht</h1>
+  <div id="log">
+    <b>Logi:</b><br>
+  </div>
 
-    <div class="controls">
-      <label for="speedSlider">Kiirus (km/h):</label>
-      <input
-        type="range"
-        id="speedSlider"
-        min="-50"
-        max="50"
-        value="0"
-        onchange="updateSpeed()"
-      />
-      <span id="speedValue">0</span>
-    </div>
-
-    <div class="controls">
-      <label for="nightModeToggle">Öörežiim:</label>
-      <input
-        type="checkbox"
-        id="nightModeToggle"
-        onchange="toggleNightMode()"
-      />
-    </div>
-
-    <div id="foorGrid"></div>
-
-    <footer>© 2025 Foorisüsteem. Kõik õigused kaitstud.</footer>
-  </body>
+  <footer>© 2025 Foorisüsteem. Kõik õigused kaitstud.</footer>
+</body>
 </html>

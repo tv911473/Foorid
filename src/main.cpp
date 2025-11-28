@@ -7,8 +7,8 @@
 #include <WiFiClientSecureBearSSL.h>
 
 #ifndef STASSID
-#define STASSID "Xiaomi 14T"
-#define STAPSK "12345678"
+#define STASSID "TLU"
+#define STAPSK ""
 #endif
 
 // --- Pin definitions ---
@@ -27,9 +27,7 @@ const String serverTimeURL =
     "AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/"
     "exec";
 const String confiURL =
-    "https://script.google.com/macros/s/"
-    "AKfycbzl8Oez2ld9P_2gI1KNMHofm14QhEg9YPC8qthcPkuDy4Le5XnoDHGztwRprpTwijJb/"
-    "exec";
+    "https://script.google.com/macros/s/AKfycbyg7SLtDjc9ftl2AlQHnIurEFrtcf64K_DsYfnORX_9j4wVifyQ3iIcLcn2AvegCT20/exec";
 const int fooriNr = 2;
 
 // --- State / timing ---
