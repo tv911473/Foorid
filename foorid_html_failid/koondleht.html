@@ -123,12 +123,40 @@
       color: #a0d8ff;
       font-style: italic;
     }
+    .time-controls {
+  margin: 20px auto;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 600px;
+}
+.time-controls input {
+  width: 80px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: #ffcc00;
+  text-align: center;
+}
+.time-controls button {
+  padding: 8px 16px;
+  background: #ffcc00;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
   </style>
 
   <script>
     const FOORIDE_ARV = 3;
     const confiURL =
-      "https://script.google.com/macros/s/AKfycbyg7SLtDjc9ftl2AlQHnIurEFrtcf64K_DsYfnORX_9j4wVifyQ3iIcLcn2AvegCT20/exec";
+      "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
 
     // Lihtne kohaliku sündmuse lisamine
     function addLocalLog(text) {
@@ -136,6 +164,38 @@
       const time = new Date().toLocaleTimeString();
       log.innerHTML += `<span class="local-event">[${time}] ${text}</span><br>`;
       log.scrollTop = log.scrollHeight;
+    }
+
+    async function saveNightTime() {
+      const start = document.getElementById("startTime").value.trim();
+      const end = document.getElementById("endTime").value.trim();
+
+      if (!start || !end || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(start) || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(end)) {
+        alert("Sisesta korrektne aeg formaadis HH:MM (nt 17:00)");
+        return;
+      }
+
+      const url = `${confiURL}?startTime=${start}&endTime=${end}`;
+      await fetch(url);
+      addLocalLog(`Öörežiim ajastatud: ${start}–${end}`);
+      updateLogFromSheet();
+    }
+    async function loadNightTimes() {
+      try {
+        const response = await fetch(confiURL + "?log=1");
+        const text = await response.text();
+        const lines = text.split('\n');
+        const lastTime = lines.find(l => l.includes("ajastatud"));
+        if (lastTime) {
+          const match = lastTime.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
+          if (match) {
+            document.getElementById("startTime").value = match[1];
+            document.getElementById("endTime").value = match[2];
+          }
+        }
+      } catch (e) {
+        console.error("Ajastuse laadimine ebaõnnestus", e);
+      }
     }
 
     function looKoondVaade() {
@@ -260,6 +320,13 @@
       id="nightModeToggle"
       onchange="toggleNightMode()"
     />
+  </div>
+  <div class="time-controls">
+    <label>Öörežiim algus:</label>
+    <input type="text" id="startTime" placeholder="17:00" />
+    <label>Lõpp:</label>
+    <input type="text" id="endTime" placeholder="19:00" />
+    <button onclick="saveNightTime()">Salvesta</button>
   </div>
 
   <div id="foorGrid"></div>

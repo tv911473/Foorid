@@ -27,7 +27,7 @@ const String serverTimeURL =
     "AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/"
     "exec";
 const String confiURL =
-    "https://script.google.com/macros/s/AKfycbyg7SLtDjc9ftl2AlQHnIurEFrtcf64K_DsYfnORX_9j4wVifyQ3iIcLcn2AvegCT20/exec";
+    "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
 const int fooriNr = 2;
 
 // --- State / timing ---
