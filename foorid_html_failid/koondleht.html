@@ -1,340 +1,353 @@
 <!DOCTYPE html>
 <html lang="et">
-<head>
-  <meta charset="UTF-8" />
-  <title>Foorisüsteem – Koondleht</title>
-  <style>
-    /* Põhi */
-    body {
-      background: radial-gradient(circle at center, #0f0f0f 0%, #080808 100%);
-      color: #f0f0f0;
-      text-align: center;
-      font-family: "Poppins", "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-    }
-    h1 {
-      margin-top: 40px;
-      font-size: 2.6rem;
-      letter-spacing: 1.5px;
-      color: #ffcc00;
-      text-shadow: 0 0 15px rgba(255, 204, 0, 0.6),
-        0 0 25px rgba(255, 204, 0, 0.3);
-    }
-    /* Controls */
-    .controls {
-      margin: 25px auto;
-      padding: 15px 25px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(6px);
-      transition: background 0.3s ease;
-      max-width: 500px;
-    }
-    .controls:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-    label {
-      font-weight: 500;
-      font-size: 1rem;
-      color: #e0e0e0;
-    }
-    input[type="range"] {
-      accent-color: #ffcc00;
-      width: 220px;
-      cursor: pointer;
-    }
-    input[type="checkbox"] {
-      transform: scale(1.4);
-      accent-color: #ffcc00;
-      cursor: pointer;
-    }
-    #speedValue {
-      font-weight: bold;
-      color: #ffcc00;
-      font-size: 1.1rem;
-      min-width: 50px;
-    }
-    /* Foorituled */
-    #foorGrid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 50px;
-      margin: 50px auto;
-      padding: 0 20px;
-      max-width: 1300px;
-    }
-    iframe {
-      width: 400px;
-      height: 520px;
-      border: none;
-      border-radius: 16px;
-      background: #181818;
-      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8),
-        0 0 20px rgba(255, 204, 0, 0.08);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    iframe:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 0 40px rgba(255, 204, 0, 0.25),
-        0 0 10px rgba(255, 255, 255, 0.1);
-    }
-    #foorGrid p {
-      margin-top: 10px;
-      color: #b0b0b0;
-      font-size: 0.95rem;
-      font-weight: 400;
-    }
-    footer {
-      margin-top: 40px;
-      font-size: 0.9rem;
-      color: #777;
-      opacity: 0.8;
-      padding-bottom: 20px;
-    }
-    #log {
-      margin: 30px auto;
-      padding: 15px;
-      max-width: 900px;
-      height: 200px;
-      overflow-y: auto;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 12px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      text-align: left;
-      color: #ffcc00;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
-    }
-    #log b {
-      color: #ffcc00;
-      font-size: 1rem;
-    }
-    .local-event {
-      color: #a0d8ff;
-      font-style: italic;
-    }
-    .time-controls {
-  margin: 20px auto;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-  max-width: 600px;
-}
-.time-controls input {
-  width: 80px;
-  padding: 8px;
-  border: none;
-  border-radius: 8px;
-  background: #222;
-  color: #ffcc00;
-  text-align: center;
-}
-.time-controls button {
-  padding: 8px 16px;
-  background: #ffcc00;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-  </style>
-
-  <script>
-    const FOORIDE_ARV = 3;
-    const confiURL =
-      "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
-
-    // Lihtne kohaliku sündmuse lisamine
-    function addLocalLog(text) {
-      const log = document.getElementById("log");
-      const time = new Date().toLocaleTimeString();
-      log.innerHTML += `<span class="local-event">[${time}] ${text}</span><br>`;
-      log.scrollTop = log.scrollHeight;
-    }
-
-    async function saveNightTime() {
-      const start = document.getElementById("startTime").value.trim();
-      const end = document.getElementById("endTime").value.trim();
-
-      if (!start || !end || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(start) || !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(end)) {
-        alert("Sisesta korrektne aeg formaadis HH:MM (nt 17:00)");
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <title>Foorisüsteem – Koondleht</title>
+    <style>
+      /* Põhi */
+      body {
+        background: radial-gradient(circle at center, #0f0f0f 0%, #080808 100%);
+        color: #f0f0f0;
+        text-align: center;
+        font-family: "Poppins", "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
       }
-
-      const url = `${confiURL}?startTime=${start}&endTime=${end}`;
-      await fetch(url);
-      addLocalLog(`Öörežiim ajastatud: ${start}–${end}`);
-      updateLogFromSheet();
-    }
-    async function loadNightTimes() {
-      try {
-        const response = await fetch(confiURL + "?log=1");
-        const text = await response.text();
-        const lines = text.split('\n');
-        const lastTime = lines.find(l => l.includes("ajastatud"));
-        if (lastTime) {
-          const match = lastTime.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
-          if (match) {
-            document.getElementById("startTime").value = match[1];
-            document.getElementById("endTime").value = match[2];
-          }
-        }
-      } catch (e) {
-        console.error("Ajastuse laadimine ebaõnnestus", e);
+      h1 {
+        margin-top: 40px;
+        font-size: 2.6rem;
+        letter-spacing: 1.5px;
+        color: #ffcc00;
+        text-shadow: 0 0 15px rgba(255, 204, 0, 0.6),
+          0 0 25px rgba(255, 204, 0, 0.3);
       }
-    }
-
-    function looKoondVaade() {
-      const grid = document.getElementById("foorGrid");
-      grid.innerHTML = "";
-      for (let i = 1; i <= FOORIDE_ARV; i++) {
-        const container = document.createElement("div");
-        container.style.textAlign = "center";
-
-        const frame = document.createElement("iframe");
-        frame.src = "foor.html?id=" + i;
-        frame.title = "Foor " + i;
-        container.appendChild(frame);
-
-        const caption = document.createElement("p");
-        caption.textContent = `Foor ${i}`;
-        container.appendChild(caption);
-
-        grid.appendChild(container);
+      /* Controls */
+      .controls {
+        margin: 25px auto;
+        padding: 15px 25px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(6px);
+        transition: background 0.3s ease;
+        max-width: 500px;
       }
+      .controls:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      label {
+        font-weight: 500;
+        font-size: 1rem;
+        color: #e0e0e0;
+      }
+      input[type="range"] {
+        accent-color: #ffcc00;
+        width: 220px;
+        cursor: pointer;
+      }
+      input[type="checkbox"] {
+        transform: scale(1.4);
+        accent-color: #ffcc00;
+        cursor: pointer;
+      }
+      #speedValue {
+        font-weight: bold;
+        color: #ffcc00;
+        font-size: 1.1rem;
+        min-width: 50px;
+      }
+      /* Foorituled */
+      #foorGrid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 50px;
+        margin: 50px auto;
+        padding: 0 20px;
+        max-width: 1300px;
+      }
+      iframe {
+        width: 400px;
+        height: 520px;
+        border: none;
+        border-radius: 16px;
+        background: #181818;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.8),
+          0 0 20px rgba(255, 204, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      iframe:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 0 40px rgba(255, 204, 0, 0.25),
+          0 0 10px rgba(255, 255, 255, 0.1);
+      }
+      #foorGrid p {
+        margin-top: 10px;
+        color: #b0b0b0;
+        font-size: 0.95rem;
+        font-weight: 400;
+      }
+      footer {
+        margin-top: 40px;
+        font-size: 0.9rem;
+        color: #777;
+        opacity: 0.8;
+        padding-bottom: 20px;
+      }
+      #log {
+        margin: 30px auto;
+        padding: 15px;
+        max-width: 900px;
+        height: 200px;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        font-family: monospace;
+        font-size: 0.9rem;
+        text-align: left;
+        color: #ffcc00;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+      }
+      #log b {
+        color: #ffcc00;
+        font-size: 1rem;
+      }
+      .local-event {
+        color: #a0d8ff;
+        font-style: italic;
+      }
+      .time-controls {
+        margin: 20px auto;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        max-width: 600px;
+      }
+      .time-controls input {
+        width: 80px;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: #222;
+        color: #ffcc00;
+        text-align: center;
+      }
+      .time-controls button {
+        padding: 8px 16px;
+        background: #ffcc00;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+    </style>
 
-      // Laadi logi kohe ja uuenda perioodiliselt
-      updateLogFromSheet();
-      setInterval(updateLogFromSheet, 8000);
-    }
+    <script>
+      const FOORIDE_ARV = 3;
+      const confiURL =
+        "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
 
-    function updateSpeed() {
-      const speed = document.getElementById("speedSlider").value;
-      document.getElementById("speedValue").innerText = speed;
-
-      fetch(`${confiURL}?speed=${speed}`)
-        .then(() => addLocalLog(`Kiirus muudetud: ${speed} km/h`))
-        .catch(() => addLocalLog("Kiiruse saatmine ebaõnnestus"));
-    }
-
-    function resetSpeedOnLoad() {
-      fetch(`${confiURL}?speed=0`)
-        .then(() => console.log("Kiirus lähtestatud 0 peale"))
-        .catch(() => console.log("Lähtestamine ebaõnnestus"));
-    }
-
-    function toggleNightMode() {
-      const nightMode = document.getElementById("nightModeToggle").checked;
-      fetch(`${confiURL}?ooreziim=${nightMode}`)
-        .then(() => {
-          addLocalLog(`Öörežiim lülitatud: ${nightMode ? "SEES" : "VÄLJAS"} (veebist)`);
-          updateBodyBackground(nightMode);
-        })
-        .catch(() => addLocalLog("Öörežiimi saatmine ebaõnnestus"));
-    }
-
-    function updateBodyBackground(isNight) {
-      document.body.style.background = isNight
-        ? "radial-gradient(circle at center, #000000 0%, #111111 100%)"
-        : "radial-gradient(circle at center, #0f0f0f 0%, #080808 100%)";
-    }
-
-    // Laadi Google Sheetsi logi (A9-st alla)
-    async function updateLogFromSheet() {
-      try {
-        const response = await fetch(confiURL + "?log=1");
-        const text = await response.text();
-        const lines = text.trim().split('\n').filter(line => line.trim() !== "");
-
+      // Lihtne kohaliku sündmuse lisamine
+      function addLocalLog(text) {
         const log = document.getElementById("log");
+        const time = new Date().toLocaleTimeString();
+        log.innerHTML += `<span class="local-event">[${time}] ${text}</span><br>`;
+        log.scrollTop = log.scrollHeight;
+      }
 
-        // Salvesta kohalikud sündmused
-        const localEvents = Array.from(log.querySelectorAll('.local-event'))
-          .map(el => el.outerHTML);
+      async function saveNightTime() {
+        const start = document.getElementById("startTime").value.trim();
+        const end = document.getElementById("endTime").value.trim();
 
-        // Puhasta ja lisa Sheetsi logi
-        log.innerHTML = "<b>Logi:</b><br>";
-
-        // Viimased 20 rida (tagurpidi)
-        lines.reverse().slice(0, 20).forEach(line => {
-          log.innerHTML += line + "<br>";
-        });
-
-        // Lisa eraldaja ja kohalikud sündmused
-        if (localEvents.length > 0) {
-          log.innerHTML += "<br><small style='color:#666'>— Kohalikud sündmused —</small><br>";
-          localEvents.forEach(event => {
-            log.innerHTML += event + "<br>";
-          });
+        if (
+          !start ||
+          !end ||
+          !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(start) ||
+          !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(end)
+        ) {
+          alert("Sisesta korrektne aeg formaadis HH:MM (nt 17:00)");
+          return;
         }
 
-        log.scrollTop = log.scrollHeight;
-      } catch (err) {
-        console.error("Logi laadimine ebaõnnestus:", err);
-        addLocalLog("Logi laadimine ebaõnnestus");
+        const url = `${confiURL}?startTime=${start}&endTime=${end}`;
+        await fetch(url);
+        addLocalLog(`Öörežiim ajastatud: ${start}–${end}`);
+        updateLogFromSheet();
       }
-    }
+      async function loadNightTimes() {
+        try {
+          const response = await fetch(confiURL + "?log=1");
+          const text = await response.text();
+          const lines = text.split("\n");
+          const lastTime = lines.find((l) => l.includes("ajastatud"));
+          if (lastTime) {
+            const match = lastTime.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
+            if (match) {
+              document.getElementById("startTime").value = match[1];
+              document.getElementById("endTime").value = match[2];
+            }
+          }
+        } catch (e) {
+          console.error("Ajastuse laadimine ebaõnnestus", e);
+        }
+      }
 
-    // Alglaadimine
-    window.onload = function () {
-      looKoondVaade();
-      resetSpeedOnLoad();
-    };
-  </script>
-</head>
+      function looKoondVaade() {
+        const grid = document.getElementById("foorGrid");
+        grid.innerHTML = "";
+        for (let i = 1; i <= FOORIDE_ARV; i++) {
+          const container = document.createElement("div");
+          container.style.textAlign = "center";
 
-<body>
-  <h1>Foorisüsteem – Koondleht</h1>
+          const frame = document.createElement("iframe");
+          frame.src = "foor.html?id=" + i;
+          frame.title = "Foor " + i;
+          container.appendChild(frame);
 
-  <div class="controls">
-    <label for="speedSlider">Kiirus (km/h):</label>
-    <input
-      type="range"
-      id="speedSlider"
-      min="-50"
-      max="50"
-      value="0"
-      onchange="updateSpeed()"
-    />
-    <span id="speedValue">0</span>
-  </div>
+          const caption = document.createElement("p");
+          caption.textContent = `Foor ${i}`;
+          container.appendChild(caption);
 
-  <div class="controls">
-    <label for="nightModeToggle">Öörežiim:</label>
-    <input
-      type="checkbox"
-      id="nightModeToggle"
-      onchange="toggleNightMode()"
-    />
-  </div>
-  <div class="time-controls">
-    <label>Öörežiim algus:</label>
-    <input type="text" id="startTime" placeholder="17:00" />
-    <label>Lõpp:</label>
-    <input type="text" id="endTime" placeholder="19:00" />
-    <button onclick="saveNightTime()">Salvesta</button>
-  </div>
+          grid.appendChild(container);
+        }
 
-  <div id="foorGrid"></div>
+        // Laadi logi kohe ja uuenda perioodiliselt
+        updateLogFromSheet();
+        setInterval(updateLogFromSheet, 8000);
+      }
 
-  <div id="log">
-    <b>Logi:</b><br>
-  </div>
+      function updateSpeed() {
+        const speed = document.getElementById("speedSlider").value;
+        document.getElementById("speedValue").innerText = speed;
 
-  <footer>© 2025 Foorisüsteem. Kõik õigused kaitstud.</footer>
-</body>
+        fetch(`${confiURL}?speed=${speed}`)
+          .then(() => addLocalLog(`Kiirus muudetud: ${speed} km/h`))
+          .catch(() => addLocalLog("Kiiruse saatmine ebaõnnestus"));
+      }
+
+      function resetSpeedOnLoad() {
+        fetch(`${confiURL}?speed=0`)
+          .then(() => console.log("Kiirus lähtestatud 0 peale"))
+          .catch(() => console.log("Lähtestamine ebaõnnestus"));
+      }
+
+      function toggleNightMode() {
+        const nightMode = document.getElementById("nightModeToggle").checked;
+        fetch(`${confiURL}?ooreziim=${nightMode}`)
+          .then(() => {
+            addLocalLog(
+              `Öörežiim lülitatud: ${nightMode ? "SEES" : "VÄLJAS"} (veebist)`
+            );
+            updateBodyBackground(nightMode);
+          })
+          .catch(() => addLocalLog("Öörežiimi saatmine ebaõnnestus"));
+      }
+
+      function updateBodyBackground(isNight) {
+        document.body.style.background = isNight
+          ? "radial-gradient(circle at center, #000000 0%, #111111 100%)"
+          : "radial-gradient(circle at center, #0f0f0f 0%, #080808 100%)";
+      }
+
+      // Laadi Google Sheetsi logi (A9-st alla)
+      async function updateLogFromSheet() {
+        try {
+          const response = await fetch(confiURL + "?log=1");
+          const text = await response.text();
+          const lines = text
+            .trim()
+            .split("\n")
+            .filter((line) => line.trim() !== "");
+
+          const log = document.getElementById("log");
+
+          // Salvesta kohalikud sündmused
+          const localEvents = Array.from(
+            log.querySelectorAll(".local-event")
+          ).map((el) => el.outerHTML);
+
+          // Puhasta ja lisa Sheetsi logi
+          log.innerHTML = "<b>Logi:</b><br>";
+
+          // Viimased 20 rida (tagurpidi)
+          lines
+            .reverse()
+            .slice(0, 20)
+            .forEach((line) => {
+              log.innerHTML += line + "<br>";
+            });
+
+          // Lisa eraldaja ja kohalikud sündmused
+          if (localEvents.length > 0) {
+            log.innerHTML +=
+              "<br><small style='color:#666'>— Kohalikud sündmused —</small><br>";
+            localEvents.forEach((event) => {
+              log.innerHTML += event + "<br>";
+            });
+          }
+
+          log.scrollTop = log.scrollHeight;
+        } catch (err) {
+          console.error("Logi laadimine ebaõnnestus:", err);
+          addLocalLog("Logi laadimine ebaõnnestus");
+        }
+      }
+
+      // Alglaadimine
+      window.onload = function () {
+        looKoondVaade();
+        resetSpeedOnLoad();
+      };
+    </script>
+  </head>
+
+  <body>
+    <h1>Foorisüsteem – Koondleht</h1>
+
+    <div class="controls">
+      <label for="speedSlider">Kiirus (km/h):</label>
+      <input
+        type="range"
+        id="speedSlider"
+        min="-50"
+        max="50"
+        value="0"
+        onchange="updateSpeed()"
+      />
+      <span id="speedValue">0</span>
+    </div>
+
+    <div class="controls">
+      <label for="nightModeToggle">Öörežiim:</label>
+      <input
+        type="checkbox"
+        id="nightModeToggle"
+        onchange="toggleNightMode()"
+      />
+    </div>
+    <div class="time-controls">
+      <label>Öörežiim algus:</label>
+      <input type="text" id="startTime" placeholder="17:00" />
+      <label>Lõpp:</label>
+      <input type="text" id="endTime" placeholder="19:00" />
+      <button onclick="saveNightTime()">Salvesta</button>
+    </div>
+
+    <div id="foorGrid"></div>
+
+    <div id="log"><b>Logi:</b><br /></div>
+
+    <footer>© 2025 Foorisüsteem. Kõik õigused kaitstud.</footer>
+  </body>
 </html>

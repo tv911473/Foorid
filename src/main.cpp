@@ -19,7 +19,6 @@ const uint8_t PED_RED_PIN = 5;
 const uint8_t PED_GREEN_PIN = 2;
 const uint8_t NIGHT_MODE_BUTTON_PIN = 14;
 
-
 // --- Wi-Fi & URLs ---
 ESP8266WiFiMulti WiFiMulti;
 const String serverTimeURL =
@@ -27,7 +26,9 @@ const String serverTimeURL =
     "AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/"
     "exec";
 const String confiURL =
-    "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
+    "https://script.google.com/macros/s/"
+    "AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/"
+    "exec";
 const int fooriNr = 2;
 
 // --- State / timing ---
@@ -296,18 +297,18 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-   static bool lastButtonState = HIGH;
+  static bool lastButtonState = HIGH;
   bool currentState = digitalRead(NIGHT_MODE_BUTTON_PIN);
 
   if (currentState == LOW && lastButtonState == HIGH) {
-      globalNightModePreference = !globalNightModePreference;
+    globalNightModePreference = !globalNightModePreference;
 
-      Serial.println("Vajutati nupp! NightMode toggled -> " +
-                     String(globalNightModePreference));
+    Serial.println("Vajutati nupp! NightMode toggled -> " +
+                   String(globalNightModePreference));
 
-      sendNightModeToServer(globalNightModePreference);
+    sendNightModeToServer(globalNightModePreference);
 
-      delay(300);
+    delay(300);
   }
   lastButtonState = currentState;
 
@@ -322,7 +323,6 @@ void loop() {
     lastUpdate = now;
     updateLights();
   }
- 
 
   delay(2);
 }
