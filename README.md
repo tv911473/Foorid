@@ -9,9 +9,9 @@ INSTALLIMISJUHIS
 1. Kopeeri Git repositoorium kohalikku masinasse
 2. Loo Google Apps Scripti kaks uut skripti ja kopeeri sisu configuration_script.txt ja server_time_script.txt failidest.
 3. Deploy skriptid, kopeeri URL aadressid failidesse:
-   foor.html: serverTimeURL; confiURL;
-   koondleht.html: confiURL;
-   main.ccp: serverTimeURL; confiURL;
+   - foor.html: serverTimeURL=`url`; confiURL=`url`;
+   - koondleht.html: erverTimeURL=`url`; confiURL=`url`;
+   - main.ccp: erverTimeURL=`url`; confiURL=`url`;
 4. Ava koondleht.html brauseris
 5. Ava foor.html ja lisa URL lõppu ?id=`foori number` (nt .../foor.html?id=2)
 6. Lae kood kontrollerile:
