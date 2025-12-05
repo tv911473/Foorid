@@ -155,8 +155,10 @@
 
     <script>
       const FOORIDE_ARV = 3;
+      const serverTimeURL =
+        "https://script.google.com/macros/s/AKfycbyybt4asK-PLpXC3tB1K4d0FnzCL14ufX9fRWqbaS1bjIF8aWYB8B9E2e126zIRsJnV/exec";
       const confiURL =
-        "https://script.google.com/macros/s/AKfycbyd02AsIlEd3DB_QLDs45rPaTBA7bgFqaB9Br5RF6KapxCo75DBcuBGD06sxo1j3gRb/exec";
+        "https://script.google.com/macros/s/AKfycbxJyWBeZxsn_qWUQGb7d1A7EnEgu5qErEBmafYwLRVcqvloIfLe4DYJT1alYCsW4bkq/exec";
 
       // Lihtne kohaliku sündmuse lisamine
       function addLocalLog(text) {
@@ -185,6 +187,54 @@
         addLocalLog(`Öörežiim ajastatud: ${start}–${end}`);
         updateLogFromSheet();
       }
+
+      async function checkNightModeSchedule() {
+        try {
+          // Laadi logi ja ajastused
+          const response = await fetch(confiURL + "?log=1");
+          const text = await response.text();
+          const lines = text.split("\n");
+
+          // Leia viimane ajastatud rida
+          const lastScheduled = lines
+            .reverse()
+            .find((l) => l.includes("ajastatud"));
+          if (!lastScheduled) return;
+
+          const match = lastScheduled.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
+          if (!match) return;
+
+          const startTimeStr = match[1];
+          const endTimeStr = match[2];
+
+          const now = new Date();
+          const nowH = now.getHours();
+          const nowM = now.getMinutes();
+
+          const [startH, startM] = startTimeStr.split(":").map(Number);
+          const [endH, endM] = endTimeStr.split(":").map(Number);
+
+          const startDate = new Date();
+          startDate.setHours(startH, startM, 0, 0);
+          const endDate = new Date();
+          endDate.setHours(endH, endM, 0, 0);
+
+          // Kontrolli, kas praegune aeg on vahemikus
+          const nightModeActive = now >= startDate && now <= endDate;
+          const checkbox = document.getElementById("nightModeToggle");
+
+          if (checkbox.checked !== nightModeActive) {
+            checkbox.checked = nightModeActive;
+            toggleNightMode(); // aktiveeri vastavalt ajale
+          }
+        } catch (e) {
+          console.error("Öörežiimi kontroll ebaõnnestus:", e);
+        }
+      }
+
+      // Käivitame iga 30 sekundi tagant
+      setInterval(checkNightModeSchedule, 30000);
+
       async function loadNightTimes() {
         try {
           const response = await fetch(confiURL + "?log=1");
@@ -216,7 +266,6 @@
           container.appendChild(frame);
 
           const caption = document.createElement("p");
-          //caption.textContent = `Foor ${i}`;
           container.appendChild(caption);
 
           grid.appendChild(container);
