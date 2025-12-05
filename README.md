@@ -1,7 +1,7 @@
 TARKVARA STRUKTUURI KIRJELDUS
 
 - foor.html - üksiku foori browseri fail
-- koondleht.html - administraatori leht kus mitu foori töötavad
+- koondleht.html - administraatori leht
 - main.ccp - kontrolleri kood
 
 INSTALLIMISJUHIS
