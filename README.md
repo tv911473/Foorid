@@ -12,11 +12,10 @@ INSTALLIMISJUHIS
    foor.html: serverTimeURL; confiURL;
    koondleht.html: confiURL;
    main.ccp: serverTimeURL; confiURL;
-
 4. Ava koondleht.html brauseris
 5. Ava foor.html ja lisa URL lõppu ?id=`foori number` (nt .../foor.html?id=2)
 6. Lae kood kontrollerile:
-   Kasuta koodi laadimiseks Arduino IDE või VS Code + PlatformIO laiendust (soovituslik)
+   Kasuta koodi laadimiseks Arduino IDE või VS Code + PlatformIO IDE (soovituslik)
    Igale kontrollerile määrata ära foori nr 1 - ... : line 32 - const int fooriNr = 1;
 
 LIIKLUSKORRALDUS
